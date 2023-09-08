@@ -26,8 +26,7 @@ nvidia-smi --query-gpu=gpu_name,gpu_bus_id,vbios_version --format=csv >> biosver
 nvidia-smi -q | grep -i serial >> nvidiaserials.txt
 sudo lshw -C display >> vdinfo.txt
 modinfo nvidia >> drvers.txt
-nvdia-bug-report.sh
-sudo nvidia-bug-report.sh # Will create a file called nvidia-bug-report.log.gz. Please attach this file to your request.
+sudo nvidia-bug-report.sh # Please attach nvidia-bug-report.log.gz to your request.
 dmesg > dmesg-log.txt
 dmesg -T | grep -i xid # or applicable error type
 dmesg -T | grep -i xid >> dmesg xid
