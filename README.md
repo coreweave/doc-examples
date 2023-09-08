@@ -1,2 +1,3 @@
-# doc-examples
-Supporting scripts, YAML, and files for docs.coreweave.com
+# Documentation examples
+
+Support files for [docs.coreweave.com](https://docs.coreweave.com).
