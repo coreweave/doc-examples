@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  token: <base64-token> # The Hugging Face base64-encoded token
+kind: Secret
+metadata:
+  name: hugging-face-token
+type: Opaque
