@@ -1,5 +1,3 @@
-> This is exactly the same as [readme.md](./readme.md), except with absolute links to the files and this notation.
-
 # Mistral 7B on CoreWeave Quickstart Guide
 
 This quickstart deploys the Mistral 7B AI model as a Knative inference Service on CoreWeave Cloud using RTX A5000 GPUs. It initially uses one instance, scales up to ten on demand, and scales to zero when idle.
