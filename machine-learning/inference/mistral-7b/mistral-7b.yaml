@@ -44,13 +44,13 @@ spec:
               containerPort: 8000
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /v1/models
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /v1/models
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
