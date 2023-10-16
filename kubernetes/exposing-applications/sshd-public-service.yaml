@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/address-pool: public-ord1
+    metallb.universe.tf/allow-shared-ip: default
+  name: sshd
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: sshd
+      port: 22
+      protocol: TCP
+      targetPort: sshd
+  selector:
+    app.kubernetes.io/name: sshd
