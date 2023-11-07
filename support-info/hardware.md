@@ -3,6 +3,11 @@ When requested by support, please provide the following information in the attac
 * BIOS and CPLD Version
 * GPU Firmware version, if available.
 
+NEW: You can use our automated log collection tool to dump logs and create a tarball to attach to a Jira support ticket.
+
+```bash
+sudo bash -c "curl -sSL https://raw.githubusercontent.com/coreweave/doc-examples/main/support-info/log_collection.sh -o log_collection.sh && bash log_collection.sh"
+```
 Please attach the output of the following commands to the request:
 
 ```bash
