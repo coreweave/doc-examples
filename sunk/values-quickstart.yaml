@@ -1,0 +1,599 @@
+# Global options for the Slurm control-plane
+global:
+  nodeSelector:
+    # -- The region for the Slurm control-plane components
+    region: LAS1
+    # -- The affinity for the Slurm control-plane components
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: cpu.coreweave.cloud/family
+                  operator: In
+                  values:
+                    - epyc
+
+# Configuration of directory services to be used for user identities
+directoryService:
+  # -- Negative caching value (in seconds) determines how long an invalid entry will be cached
+  # before asking ldap again Improves directory listing time when a primary gid cannot be found
+  negativeCacheTimeout: "600"
+  # Unix groups allowed for sudo access
+  # Group names are not fully-qualified for the default directory; E.G "group1" instead of "group1@domain.com"
+  # Group names are fully-qualified for additional directories
+  # Sudo Groups for all directories are added here
+  # -- List of groups from all directories with sudo privileges
+  sudoGroups: []
+  # -- The SSSD debug level to use, bit mask of levels to enable
+  debugLevel: 0x01F0
+  # The directory services to configure
+  directories:
+    - # -- Name of directory service - Primary domain should always be named "default"
+      name: default
+      # -- Enable the directory service
+      enabled: true
+
+      # For Google Secure LDAP, use ldaps://ldap.google.com:636
+      # -- (string) The LDAP URI to use for the directory service
+      ldapUri: # ldap://YOUR_LDAP_IP
+
+      # For E.G Google Secure LDAP where bindDn is not required, only supply user.canary
+      user:
+        # -- (string) The LDAP bind DN to use for the directory service
+        bindDn: # cn=Admin,ou=Users,ou=CORP,dc=corp,dc=example,dc=com
+        # -- (string) The LDAP search base to use for the directory service
+        searchBase: #dc=corp,dc=example,dc=com
+        # -- (string) The password to use for the directory service lookups
+        password:
+        # -- (string) Name of existing secret containing an SSSD configuration snippet w/ the
+        # ldap_default_authtok set for this domain.
+        existingSecret:
+        # -- (string) The user to use to confirm lookup is working
+        canary:
+      # -- The default shell to use for users
+      defaultShell: "/bin/bash"
+      # -- The fallback home directory to use for users
+      fallbackHomeDir: "/home/%u"
+      # -- (string) Override the homeDirectory attribute from LDAP with a provided path
+      overrideHomeDir: # /mnt/nvme/home/%u
+      # -- (string) Override the default schema LDAP attribute that corresponds to the user's login
+      # name.
+      overrideUserNameAttr: # employeeNumber
+      # -- (string) Override the default schema LDAP attribute that corresponds to the user's id
+      overrideUidAttr: # posixUid
+      # -- (string) Override the default schema LDAP attribute that corresponds to the user's
+      # primary group id.
+      overrideGidAttr: # posixGid
+      # E.G: kubectl create secret tls ldap-certificate --cert=Google_2025_08_24_55726.crt --key=Google_2025_08_24_55726.key
+      # -- (string) Name of existing tls certificate for LDAP-S
+      ldapsCert:
+
+      # For Google Secure LDAP, set schema: rfc2307bis
+      # -- Desired LDAP schema: AD, POSIX, rfc2307bis
+      schema: AD
+      # -- (multi-line string) Set additional arbitrary config per domain for sssd
+      #  additionalConfig: |
+      #  ldap_foo = bar
+
+  #- name: google-example.com
+  #  enabled: true
+  #  ldapUri: ldaps://ldap.google.com:636
+  #  user:
+  #    canary: user@google-example.com
+  #  defaultShell: "/bin/bash"
+  #  fallbackHomeDir: "/home/%u"
+  #  overrideHomeDir: /mnt/nvme/home/%u
+  #  ldapsCert: google-ldaps-cert
+  #  schema: rfc2307bis
+
+  #- name: coreweave.cloud
+  #  enabled: true
+  #  ldapUri: ldap://openldap
+  #  user:
+  #    bindDn: cn=admin,dc=coreweave,dc=cloud
+  #    searchBase: dc=coreweave,dc=cloud
+  #    existingSecret: bind-user-sssd-config
+  #    canary: admin
+  #  defaultShell: "/bin/bash"
+  #  fallbackHomeDir: "/home/%u"
+  #  schema: rfc2307
+
+  #- name: coreweave.cloud
+  #  enabled: true
+  #  ldapUri: ldap://authentik-outpost-ldap-outpost
+  #  user:
+  #    bindDn: cn=ldapsvc,dc=coreweave,dc=cloud
+  #    searchBase: dc=coreweave,dc=cloud
+  #    existingSecret: bind-user-sssd-config
+  #    canary: ldapsvc
+  #  startTLS: true
+  #  userObjectClass: user
+  #  groupObjectClass: group
+  #  userNameAttr: cn
+  #  groupNameAttr: cn
+  #  schema: rfc2307bis
+
+  #- name: contoso.com
+  #  enabled: true
+  #  ldapUri: ldap://domaincontroller.tenant-my-tenant.coreweave.cloud
+  #  user:
+  #    bindDn: CN=binduser,CN=Users,DC=contoso,DC=com
+  #    searchBase: DC=contoso,DC=com
+  #    existingSecret: bind-user-sssd-config
+  #    canary: binduser
+  #  defaultShell: "/bin/bash"
+  #  fallbackHomeDir: "/home/%u"
+  #  schema: AD
+
+# Configuration of the Slurm cluster
+slurmConfig:
+  # Configuration of the Slurm controller
+  slurmCtld:
+    # -- The interval, in seconds, that the backup controller waits for the primary controller to
+    # respond before assuming control. The default value is 120 seconds. May not exceed 65533.
+    timeout: 60
+    # -- The list of additional parameters SlurmctldParameters to pass to slurmctld
+    additionalParameters:
+      - idle_on_node_suspend
+      - node_reg_mem_percent=95
+    # -- The plugin to be used for process tracking on a job step basis. One of proctrack/linuxproc
+    # or proctrack/cgroup
+    procTrackType: "proctrack/linuxproc"
+    # -- The task plugin to use, may provide multiple comma seperated. Valid values are
+    # task/affinity, task/cgroups and task/none
+    taskPlugin: "task/none"
+    # -- The job submit plugins to use, may provide multiple comma separated.
+    jobSubmitPlugins:
+    # -- This controls what level of association-based enforcement to impose on job submissions.
+    # Valid options are any combination of associations, limits, nojobs, nosteps, qos, safe, and
+    # wckeys, or all for all things (except nojobs and nosteps, which must be requested as well).
+    accountingStorageEnforce: qos,limits
+    # -- (string) A ConfigMap with keys mapping to files in /etc/slurm on the controller only. This
+    # ConfigMap MUST not contain slurm.conf, plugstack.conf, gres.conf, cgroup.conf, topology.conf
+    etcConfigMap:
+
+  # Configuration of the Slurm nodes
+  slurmd:
+    # -- The interval, in seconds, that the Slurm controller waits for slurmd to respond before
+    # configuring that node's state to DOWN.
+    timeout: 30
+    # -- Nodes which remain idle or down for this number of seconds will be placed into power save
+    # mode by SuspendProgram.
+    suspendTime: INFINITE
+    # -- A ConfigMap with keys mapping to prolog.d scripts
+    prologConfigMap:
+    # -- A ConfigMap with keys mapping to epilog.d scripts
+    epilogConfigMap:
+
+  # -- The interval, in seconds, after which a non-responsive job allocation command (e.g. srun or
+  # salloc) will result in the job being terminated
+  inactiveLimit: 0
+  # -- The interval, in seconds, given to a job's processes between the SIGTERM and SIGKILL signals
+  # upon reaching its time limit.
+  killWait: 30
+  # -- Specifies how many seconds the srun command should by default wait after the first task
+  # terminates before terminating all remaining tasks. The "--wait" option on the srun command line
+  # overrides this value. The default value is 0, which disables this feature.
+  waitTime: 0
+  # -- The values to use for the parameters of the select/cons_tres plugin
+  selectTypeParameters: CR_Core
+  # -- The default memory per CPU in megabytes. This value is used when the "--mem-per-cpu"
+  # option is not specified on the srun command line.
+  defMemPerCPU: 4096
+
+  # -- (string) Freetext config to be appended to slurm.conf
+  # @default -- ""
+  extraConfig: |
+    # Freetext config to be appended to slurm.conf
+    # Can be multiple lines
+  # -- cgroup.conf value, only used when procTrackType is set to proctrack/cgroup
+  cgroupConfig: |
+    CgroupPlugin=autodetect
+    IgnoreSystemd=yes
+    CgroupAutomount=no
+    ConstrainCores=yes
+    ConstrainDevices=yes
+    ConstrainRAMSpace=yes
+
+# Network configuration
+network:
+  # -- TODO NOT USED
+  disableK8sNetworking: false
+  # -- TODO NOT USED
+  vpcs: []
+  # - name: las1-1
+
+# -- Image pull secrets to configure if using custom private images
+imagePullSecrets: []
+
+# Configuration of the Slurm JWT authentication
+jwt:
+  # -- (string) The name of an existing secret containing the JWT private key, otherwise the chart
+  # will generate one.
+  existingSecret:
+
+# Configuration of the Slurm controller deployment
+controller:
+  # -- The number of replicas of the controller to run, currently should be left at 1
+  replicas: 1
+  # -- The image to use for the controller
+  image:
+    repository: registry.gitlab.com/coreweave/sunk/controller
+    tag:
+  securityContext:
+    # -- The user to run as, defaults to the slurm userid
+    runAsUser: 401
+    # -- The group to run as, defaults to the slurm groupid
+    runAsGroup: 401
+  # -- Resources for the controller container
+  resources:
+    limits:
+      cpu: 4
+      memory: 16Gi
+    requests:
+      cpu: 4
+      memory: 16Gi
+  # -- The liveness probe for the controller
+  livenessProbe:
+    exec:
+      command:
+        - sinfo
+    failureThreshold: 6
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  # -- The termination grace period for the controller
+  terminationGracePeriodSeconds: 30
+  # -- The priority class name for the controller
+  priorityClassName: normal
+  # -- The configuration of the controller's persistent volume claim
+  stateVolume:
+    # -- (string) The storage class name, the complete one, use instead of type when storage class
+    # does not have region
+    storageClassName:
+    # -- The storage type of the persistent volume claim, this is storage class without region
+    storageType: "block-nvme"
+    # -- The size of the persistent volume claim
+    size: 32Gi
+
+# Configuration of the deployment of the Slurm REST API
+rest:
+  # -- The number of replicas of the rest pod to run
+  replicas: 1
+  securityContext:
+    # -- The user to run as, defaults to the slurm userid
+    runAsUser: 401
+    # -- The group to run as, defaults to the slurm groupid
+    runAsGroup: 401
+  # -- Resources for the slurmrestd container, these defaults should be good for small/medium
+  # clusters
+  resources:
+    limits:
+      cpu: 2
+      memory: 8Gi
+    requests:
+      cpu: 2
+      memory: 8Gi
+  # -- The termination grace period for the rest pod
+  terminationGracePeriodSeconds: 5
+  # -- The priority class name for the rest pod
+  priorityClassName: normal
+
+# Configuration of the Syncer deployment
+syncer:
+  # -- The image to use for the syncer
+  image:
+    repository: registry.gitlab.com/coreweave/sunk/operator
+    tag:
+  # -- Enable the syncer, this is required for most functionality and should only be disable for
+  # troubleshooting
+  enabled: true
+  # -- The maximum concurrent reconciles, this should be adjusted based on the number of nodes and size
+  # of jobs launched in the Slurm cluster, to handle bursts operations quickly. The default value
+  # should be good up to 100 nodes in most cases.
+  maxConcurrentReconciles: 10
+  # -- The log level, uses zap log level strings or integers
+  logLevel: debug
+  # -- Sentry DSN for error reporting, the default here is a general project owned by CoreWeave
+  sentryDSN: https://569e170f267b4bf09468c3024ec6c069@o263258.ingest.sentry.io/4505285055348736
+  # Flags for permissions on node operations
+  nodePermissions:
+    # -- Enable node operations on the syncer, currently this allows restart of nodes when enabled
+    enabled: false
+  # -- The resource for the syncer container
+  resources:
+    limits:
+      cpu: "2"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 1Gi
+
+# Configuration of the Scheduler deployment
+scheduler:
+  # -- The image to use for the scheduler
+  image:
+    repository: registry.gitlab.com/coreweave/sunk/operator
+    tag:
+  # -- Enable the scheduler, to scheduler k8s pods on the Slurm cluster nodes
+  enabled: false
+  scope:
+    # -- The scope of the scheduler, can be cluster or namespace
+    type: namespace
+    # -- The list of the namespaces to scope the scheduler to, only used when scope.type is set to
+    # namespace, namespaces other than the release namespace will need role bindings created
+    # @default -- `[.Release.Namespace]`
+    namespaces: []
+  # -- The log level, uses zap log level strings or integers
+  logLevel: debug
+  # -- Sentry DSN for error reporting, the default here is a general project owned by CoreWeave
+  sentryDSN:
+  # -- The resource for the scheduler container
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 1Gi
+
+# Configuration of the Slurmdbd deployment
+accounting:
+  # -- Enable the accounting
+  enabled: true
+  external:
+    # -- Enable the external accounting, instead of deploying an internal accounting instance
+    enabled: false
+    # -- The host of the external accounting instance: IP or hostname
+    host:
+    # -- The user to use to authenticate to the external accounting instance
+    user:
+    # -- The port of the external accounting instance
+    port:
+  # -- The number of replicas to run of the accounting instance
+  replicas: 1
+
+  securityContext:
+    # -- The user to run as, defaults to the slurm userid
+    runAsUser: 401
+    # -- The group to run as, defaults to the slurm groupid
+    runAsGroup: 401
+  # -- The resources for the accounting container
+  resources:
+    limits:
+      cpu: 4
+      memory: 16Gi
+    requests:
+      cpu: 4
+      memory: 16Gi
+  # -- The termination grace period for the accounting pod
+  terminationGracePeriodSeconds: 30
+  # -- The priority class name for the accounting pod
+  priorityClassName: normal
+
+# Configuration of the login nodes(s)
+login:
+  # -- The number of replicas to run of the login node, when running more than one a pod specific
+  # service is created for each one in addition to the main service.
+  replicas: 1
+  # -- The image to use for the login node
+  image:
+    repository: registry.gitlab.com/coreweave/sunk/controller-extras
+    tag:
+  # -- The resources for the login node sshd container
+  resources:
+    limits:
+      cpu: 4
+      memory: 8Gi
+    requests:
+      cpu: 4
+      memory: 8Gi
+  # Configuration of the login service(s)
+  service:
+    # -- The type of service to create for the login node(s)
+    type: LoadBalancer
+    # -- The external traffic policy for the service(s)
+    externalTrafficPolicy: Local
+    # -- Expose a public IP for the login service(s)
+    exposePublicIP: false
+    # -- Additional annotations for the login service(s)
+    annotations: {}
+    # -- Additional port definitions to expose on the login service(s)
+    additionalPorts: []
+    #- name: eternal-shell
+    #  port: 2022
+    #  targetPort: 20222 # optional
+    #  protocol: TCP # optional
+  # -- The termination grace period for the login pod
+  terminationGracePeriodSeconds: 30
+  # -- The priority class name for the login pod
+  priorityClassName: normal
+  # -- Automatically mount the service account token into the login pod
+  automountServiceAccountToken: false
+  # -- The service account name to use for the login pod
+  serviceAccountName: "default"
+
+  # -- Additional sidecar containers to add to the login pod
+  containers: []
+
+  # -- Additional volumes to add to the login pod
+  volumes: []
+  #- name: cache-vol
+  #  emptyDir:
+  #    medium: Memory
+  # -- s6 configuration for the login pod
+  s6: {}
+  # packages:
+  #   type: oneshot
+  #   timeoutUp: 0
+  #   timeoutDown: 0
+  #   script: |
+  #     #!/usr/bin/env bash
+  #     apt -y install nginx
+  # nginx:
+  #   type: longrun
+  #   timeoutUp: 0
+  #   timeoutDown: 0
+  #   script: |
+  #     #!/usr/bin/env bash
+  #     nginx -g "daemon off;"
+
+  # -- The ssh keys persistent volume claim
+  sshKeyVolume:
+    # -- (string) The storage class name, the complete one, use instead of type when storage class
+    # does not have region
+    storageClassName:
+    # -- The storage type of the persistent volume claim, this is storage class without region
+    storageType: "shared-nvme"
+    # -- The size of the persistent volume claim
+    size: 1Gi
+
+# Compute Node Configuration
+compute:
+  # -- Enable topology generation for the compute nodes in the cluster
+  generateTopology: true
+  # -- Use dynamic nodes (false uses cloud nodes), dynamic is recommended for most use cases
+  dynamic: true
+  # -- The maximum unavailability of the compute nodes during a rolling update, can be percentage or
+  # number
+  maxUnavailable: 10%
+
+  # -- s6 configuration for the compute pods
+  s6: {}
+  # packages:
+  #   type: oneshot
+  #   timeoutUp: 0
+  #   timeoutDown: 0
+  #   script: |
+  #     #!/usr/bin/env bash
+  #     apt -y install nginx
+  # nginx:
+  #   type: longrun
+  #   timeoutUp: 0
+  #   timeoutDown: 0
+  #   script: |
+  #     #!/usr/bin/env bash
+  #     nginx -g "daemon off;"
+  ssh:
+    # -- Enable direct ssh to compute nodes
+    enabled: false
+
+  # -- Mounts to add to the compute pods
+  mounts:
+    - name: /root
+      pvc: root-nvme
+    - name: /mnt/nvme
+      pvc: data-nvme
+
+  # -- Partitions to add to the cluster
+  partitions: |
+    PartitionName=all Nodes=ALL Default=YES MaxTime=INFINITE State=UP
+
+  autoPartition:
+    # -- Enable the auto partition, this will create a partition for each node definition enabled
+    enabled: true
+
+  pyxis:
+    # -- Enable the pyxis
+    enabled: false
+    # -- Enable ENROOT_MOUNT_HOME
+    mountHome: true
+    # -- Enable ENROOT_REMAP_ROOT
+    remapRoot: true
+
+  #  securityContext:
+  #    capabilities:
+  #      add: ["SYS_NICE"] # Add "SYS_ADMIN" for pyxis/enroot image pull support
+
+  nodes:
+    # Simple CPU-only Compute Node Definition
+    simple:
+      enabled: true
+      replicas: 2
+      features:
+        - cpu
+      image:
+        repository: registry.gitlab.com/coreweave/sunk/controller-extras
+      gresGpu: null
+      # Create a small node with 1cpu and 1g memory
+      resources:
+        limits:
+          memory: 1Gi
+          cpu: 1
+        requests:
+          memory: 1Gi
+          cpu: 1
+      tolerations:
+        - key: is_cpu_compute
+          operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+
+  #  # -- RTX4000-cu117 Compute Node Definition
+  #  rtx4000-cu117:
+  #    enabled: false
+  #    replicas: 1
+  #    definitions:
+  #      - rtx4000
+  #      - cu117
+  #      - las1
+
+# Configuration of the munge sidecar container
+munge:
+  # -- The resources for the munge container
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+
+# -- Options for Bitnami mysql chart
+mysql:
+  enabled: true
+  auth:
+    username: coreweave
+    database: slurm_acct_db
+    existingSecret: "{{ .Release.Name }}-mysql"
+  primary:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: cpu.coreweave.cloud/family
+                  operator: In
+                  values:
+                    - epyc
+                - key: topology.kubernetes.io/region
+                  operator: In
+                  values:
+                    - "{{.Values.global.nodeSelector.region}}"
+    startupProbe:
+      failureThreshold: 30
+    persistence:
+      existingClaim: "{{ .Release.Name }}-mysql-primary"
+      storageType: "block-nvme"
+      size: 8Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9104"
+  resources:
+    requests:
+      memory: 4Gi
+      cpu: 2
+    limits:
+      memory: 4Gi
+      cpu: 2
