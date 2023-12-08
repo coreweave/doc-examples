@@ -1,3 +1,9 @@
+**NV will RMA GPUs if any of the four tools show a failure.**
+1. HGX FD
+2. GPU FD through HGX FD
+3. IST through HGX FD
+4. TinyMeg
+
 When requested by support, please provide the following information in the attachment:
 
 * BIOS and CPLD Version
