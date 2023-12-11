@@ -1,4 +1,5 @@
 **NV will RMA GPUs if any of the four tools show a failure.**
+
 1. HGX FD
 2. GPU FD through HGX FD
 3. IST through HGX FD
@@ -8,12 +9,14 @@ When requested by support, please provide the following information in the attac
 
 * BIOS and CPLD Version
 * GPU Firmware version, if available.
+* The logs that show the failure from above 4 tools.
 
 NEW: You can use our automated log collection tool to dump logs and create a tarball to attach to a Jira support ticket.
 
 ```bash
 sudo bash -c "curl -sSL https://raw.githubusercontent.com/coreweave/doc-examples/main/support-info/log_collection.sh -o log_collection.sh && bash log_collection.sh"
 ```
+
 Please attach the output of the following commands to the request:
 
 ```bash
@@ -29,6 +32,7 @@ or
 nvidia-smi > nvidia-smi.txt
 nvidia-smi -q >> smifull.txt
 ```
+
 or
 
 ```bash
