@@ -25,7 +25,7 @@ sudo bash -c "curl -sSL https://raw.githubusercontent.com/coreweave/doc-examples
 For manual log collection - please run all of the below commands and attach the output of the following commands to the Jira support ticket:
 
 ```bash
-#IPMI Tool INfo
+#IPMI Tool Info
 ipmitool fru print 0
 ipmitool sel elist last 100 # Or screenshot BMC WebGUI Event Logs
 ipmitool sdr elist # Or screenshot of BMC WebGUI sensor logs
