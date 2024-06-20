@@ -19,7 +19,7 @@ echo "compressed into a tarball, which you can then attach to your support"
 echo "JIRA ticket. Thank you for using our tool!"
 
 # Display version information
-echo "Log Collection Tool v0.2"
+echo "Log Collection Tool v0.5"
 
 # Prompt the user for the JIRA ticket number
 read -p "Enter the JIRA ticket number (example: SDB-2011): " jira_ticket
@@ -36,6 +36,9 @@ file_names=(
   "lspci-tvvv.txt"
   "lspci-vvv.txt"
   "nvidia-bug-report.log.gz"
+  "mst-start.txt"
+  "mst-status-v.txt"
+  "mellanox-lspci.txt"
 )
 
 # Define a function to run commands and save output
@@ -56,6 +59,9 @@ commands=(
   "lspci -tvvv"
   "lspci -vvv"
   "nvidia-bug-report.sh"
+  "sudo mst start"
+  "sudo mst status -v"
+  "lspci | grep -i Mellanox"
 )
 
 # Run commands
