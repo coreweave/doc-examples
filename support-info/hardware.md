@@ -65,4 +65,11 @@ sudo nvidia-bug-report.sh # Attach nvidia-bug-report.log.gz to your request
 # Full NVIDIA SMI and System Logs
 nvidia-smi > nvidia_smi.txt
 nvidia-smi -q >> nvidia_smi.txt
+
+
+# Infiniband
+sudo mst start
+sudo mst status -v
+lspci | grep -i Mellanox
+
 ```
