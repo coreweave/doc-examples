@@ -19,10 +19,10 @@ echo "compressed into a tarball, which you can then attach to your support"
 echo "JIRA ticket. Thank you for using our tool!"
 
 # Display version information
-echo "Log Collection Tool v0.5"
+echo "Log Collection Tool v0.7"
 
 # Prompt the user for the JIRA ticket number
-read -p "Enter the JIRA ticket number (example: SDB-2011): " jira_ticket
+read -p "Enter the JIRA ticket number (example: SDB-2011) or the serial number of the chassis: " jira_ticket
 
 # Define the file names
 file_names=(
@@ -39,6 +39,8 @@ file_names=(
   "mst-start.txt"
   "mst-status-v.txt"
   "mellanox-lspci.txt"
+  "lstopo-output.txt"
+  "lstopo-v-output.txt"
 )
 
 # Define a function to run commands and save output
@@ -62,6 +64,8 @@ commands=(
   "sudo mst start"
   "sudo mst status -v"
   "lspci | grep -i Mellanox"
+  "lstopo"
+  "lstopo -v"
 )
 
 # Run commands
@@ -94,4 +98,4 @@ cleanup
 chmod a+rw "$jira_ticket.tar.gz"
 
 echo "Logs have been saved to a tarball at $tarball_path"
-echo "Please attach this tarball of log files to Jira ticket $jira_ticket and notify the CoreWeave support team."
+echo "Please attach this tarball of log files to the Jira Ticket $jira_ticket and notify the CoreWeave support team."
