@@ -19,7 +19,7 @@ echo "compressed into a tarball, which you can then attach to your support"
 echo "JIRA ticket. Thank you for using our tool!"
 
 # Display version information
-echo "Log Collection Tool v0.7"
+echo "Log Collection Tool v0.8"
 
 # Prompt the user for the JIRA ticket number
 read -p "Enter the JIRA ticket number (example: SDB-2011) or the serial number of the chassis: " jira_ticket
@@ -41,6 +41,7 @@ file_names=(
   "mellanox-lspci.txt"
   "lstopo-output.txt"
   "lstopo-v-output.txt"
+  "nvme-output.txt"
 )
 
 # Define a function to run commands and save output
@@ -66,6 +67,7 @@ commands=(
   "lspci | grep -i Mellanox"
   "lstopo"
   "lstopo -v"
+  "nvme list"
 )
 
 # Run commands
