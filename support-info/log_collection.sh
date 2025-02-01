@@ -52,7 +52,7 @@ commands=(
   "nvidia-bug-report.sh > $jira_ticket/nvidia-bug-report.log.gz"
   "sudo mst start"
   "sudo mst status -v > $jira_ticket/mst-status-v.txt"
-  "lspci | grep -i Mellanox > $jira_ticket/mellanox-lspci.tåxt"
+  "lspci | grep -i Mellanox > $jira_ticket/mellanox-lspci.txt"
   "lstopo > $jira_ticket/lstopo-output.txt"
   "sudo nvme list > $jira_ticket/nvme-output.txt"
   "dmesg | grep NVRM > $jira_ticket/dmesg-nvrm.txt"
