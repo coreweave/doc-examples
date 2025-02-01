@@ -52,7 +52,7 @@ commands=(
   "nvidia-bug-report.sh > $jira_ticket/nvidia-bug-report.log.gz"
   "sudo mst start"
   "sudo mst status -v > $jira_ticket/mst-status-v.txt"
-  "lspci | grep -i Mellanox > $jira_ticket/mellanox-lspci.txt"
+  "lspci | grep -i Mellanox > $jira_ticket/mellanox-lspci.tåxt"
   "lstopo > $jira_ticket/lstopo-output.txt"
   "sudo nvme list > $jira_ticket/nvme-output.txt"
   "dmesg | grep NVRM > $jira_ticket/dmesg-nvrm.txt"
@@ -65,16 +65,18 @@ commands=(
 
 # Execute commands
 for cmd in "${commands[@]}"; do
-  echo "Running: $cmd"
+  echo "Running the command: $cmd"
   eval "$cmd" &> /dev/null
-  echo "Saved output."
+  echo "Saved output to log file."
 done
 
 # Collect additional logs
-echo "Gathering additional logs for CoreWeave..." > $jira_ticket/master.log
+echo "Gathering some additional logs for CoreWeave..." > $jira_ticket/master.log
 echo "Log collected on: $timestamp" >> $jira_ticket/master.log
 echo ================================================== >> $jira_ticket/master.log
 sudo ipmitool fru print >> $jira_ticket/master.log
+echo "BMC $(sudo ipmitool mc info | awk -F': ' '/Firmware Revision/ {print "firmware version:", $2}')" >> $jira_ticket/master.log
+echo "BIOS $(sudo dmidecode -t bios | awk -F': ' '/Version/ {print "version:", $2}')" >> $jira_ticket/master.log
 echo ================================================== >> $jira_ticket/master.log
 echo "If any GPUs fell off the bus (Xid79) - will be shown below" >> $jira_ticket/master.log
 sudo dmesg | grep NVRM >> $jira_ticket/master.log
