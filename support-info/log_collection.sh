@@ -11,93 +11,122 @@ check_sudo() {
 # Call the function to check if the script is run with sudo
 check_sudo
 
-# Display welcome message
-echo "Welcome to the CoreWeave Log Collection Tool"
-echo "This tool has been designed to help you gather the necessary logs"
-echo "requested by our support team. Once collected, these logs will be"
-echo "compressed into a tarball, which you can then attach to your support"
-echo "JIRA ticket. Thank you for using our tool!"
+# current time
+timestamp=$(date +"%Y-%m-%d_%H-%M-%S_%Z")
 
-# Display version information
-echo "Log Collection Tool v0.8"
+
+# Display welcome message
+echo "*******************************************************"
+echo "*                                                     *"
+echo "*   Welcome to the CoreWeave Log Collection Tool      *"
+echo "*                                                     *"
+echo "*   This tool gathers necessary logs for support.     *"
+echo "*   Logs will be compressed - please attach to your   *"
+echo "*   Jira ticket.                                      *"
+echo "*                                                     *"
+echo "*   Log Collection Tool v1.4                          *"
+echo "*   Build Date: 3 February 2025                       *"
+echo "*******************************************************"
 
 # Prompt the user for the JIRA ticket number
-read -p "Enter the JIRA ticket number (example: SDB-2011) or the serial number of the chassis: " jira_ticket
+read -p "Enter the JIRA ticket number or the system serial number: " jira_ticket
 
-# Define the file names
-file_names=(
-  "nvidia-smi-query.txt"
-  "biosvers.txt"
-  "vdinfo.txt"
-  "drvers.txt"
-  "dmesg-log.txt"
-  "lspci.txt"
-  "pciview.txt"
-  "lspci-tvvv.txt"
-  "lspci-vvv.txt"
-  "nvidia-bug-report.log.gz"
-  "mst-start.txt"
-  "mst-status-v.txt"
-  "mellanox-lspci.txt"
-  "lstopo-output.txt"
-  "lstopo-v-output.txt"
-  "nvme-output.txt"
-)
+# Create log directory with name of user input from above
+mkdir -p "$jira_ticket"
 
-# Define a function to run commands and save output
-run_command() {
-  $1 > "$2"
-  echo "Executed: $1"
-}
-
-# Define commands to run and save output
+# Define and run commands
 commands=(
-  "nvidia-smi --query"
-  "nvidia-smi --query-gpu=gpu_name,gpu_bus_id,vbios_version --format=csv"
-  "lshw -C display"
-  "modinfo nvidia"
-  "dmesg"
-  "lspci"
-  "lspci -v"
-  "lspci -tvvv"
-  "lspci -vvv"
-  "nvidia-bug-report.sh"
+  "ibstat > $jira_ticket/ibstat.txt"
+  "sudo ibdiagnet > $jira_ticket/ibdiagnet_output.txt"
+  "sudo touch /var/tmp/ibdiagnet2/ibdiagnet2.iblinkinfo"
+  "sudo cp /var/tmp/ibdiagnet2/ibdiagnet2.iblinkinfo $jira_ticket/ibdiagnet2.iblinkinfo.txt"
+  "nvidia-smi --query-gpu=gpu_name,gpu_bus_id,vbios_version --format=csv > $jira_ticket/nvidia-smi-query-summary.txt"
+  "nvidia-smi -q > $jira_ticket/nvidia-smi-query-full.txt"
+  "nvidia-smi > $jira_ticket/nvidia-smi.txt"
+  "nvidia-smi nvlink -s  > $jira_ticket/nvlink-statuses.txt"
+  "lshw -C display > $jira_ticket/biosvers.txt"
+  "modinfo nvidia > $jira_ticket/drvers.txt"
+  "dmesg > $jira_ticket/dmesg-log.txt"
+  "lspci > $jira_ticket/lspci.txt"
+  "lspci -vvv > $jira_ticket/lspci-vvv.txt"
+  "nvidia-bug-report.sh > $jira_ticket/nvidia-bug-report.log.gz"
   "sudo mst start"
-  "sudo mst status -v"
-  "lspci | grep -i Mellanox"
-  "lstopo"
-  "lstopo -v"
-  "nvme list"
+  "sudo mst status -v > $jira_ticket/mst-status-v.txt"
+  "lspci | grep -i Mellanox > $jira_ticket/mellanox-lspci.txt"
+  "lstopo > $jira_ticket/lstopo-output.txt"
+  "sudo nvme list > $jira_ticket/nvme-output.txt"
+  "dmesg | grep NVRM > $jira_ticket/dmesg-nvrm.txt"
+  "sudo ipmitool sel list > $jira_ticket/ipmitool-sel.txt"
+  "sudo ipmitool fru print > $jira_ticket/ipmitool-fru.txt"
+  "sudo ipmitool lan print > $jira_ticket/ipmitool-lan.txt"
+  "sudo ipmitool sensor list > $jira_ticket/ipmitool-sensor.txt"
+  "sudo systemctl status nvidia-fabricmanager > $jira_ticket/nvidia-fabricmanager-status.txt"
 )
 
-# Run commands
-for i in "${!commands[@]}"; do
-  run_command "${commands[$i]}" "${file_names[$i]}"
+# Execute commands
+for cmd in "${commands[@]}"; do
+  echo "Running: $cmd"
+  eval "$cmd" &> /dev/null
+  echo "Saved output."
 done
 
-# Create a directory with the JIRA ticket number
-mkdir "$jira_ticket"
+# Collect additional logs
+echo "Gathering additional logs for CoreWeave..." > $jira_ticket/master.log
+echo "Log collected on: $timestamp" >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+sudo ipmitool fru print >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+echo "If any GPUs fell off the bus (Xid79) - will be shown below" >> $jira_ticket/master.log
+sudo dmesg | grep NVRM >> $jira_ticket/master.log
+echo "If no GPUs fell off the bus - no data will be shown above." >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+# VBIOS Versions
+echo "VBIOS Versions:" >> $jira_ticket/master.log
+sudo nvidia-smi -q | grep -i Vbios | awk -F': ' '{print $2}' >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+echo "GPU VBIOS check complete." >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+echo "Checking for GPU count." >> $jira_ticket/master.log
+echo "A healthy node has eight GPUs below" >> $jira_ticket/master.log
+nvidia-smi -q | grep -i serial >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+nvidia-smi -L >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+echo "For a Row Remap Failure, Yes must appear below" >> $jira_ticket/master.log
+nvidia-smi -q -d row_remapper | grep Remapping >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+nvidia-smi --format=csv --query-remapped-rows=timestamp,gpu_serial,remapped_rows.failure,remapped_rows.uncorrectable >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+nvidia-smi --format=csv --query-gpu=gpu_name,gpu_bus_id,serial,uuid,ecc.errors.uncorrected.volatile.total,ecc.errors.uncorrected.aggregate.total >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+nvidia-smi -q | grep 'Single' >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+nvidia-smi -q | grep 'Double' >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
+lspci | grep -i nvidia >> $jira_ticket/master.log
+echo ================================================== >> $jira_ticket/master.log
 
-# Move the generated files to the directory
-for file_name in "${file_names[@]}"; do
-  mv "$file_name" "$jira_ticket/"
+# GPU Link Speed
+echo "GPU link speed" >> $jira_ticket/master.log
+for dev in 19:00.0 1c:00.0 3f:00.0 42:00.0 9b:00.0 9e:00.0 bf:00.0 c2:00.0; do
+  sudo lspci -s $dev -vv | grep LnkSta >> $jira_ticket/master.log
 done
+echo ================================================== >> $jira_ticket/master.log
 
-# Define a function to clean up after creating the tarball
-cleanup() {
-  # Remove the directory and its contents
-  rm -rf "$jira_ticket"
-}
+# NIC Link Speed
+echo "NIC card link speed" >> $jira_ticket/master.log
+for dev in c1:00.0 c0:00.0 9d:00.0 9c:00.0 41:00.0 40:00.0 1b:00.0 1a:00.0; do
+  sudo lspci -s $dev -vv | grep LnkSta >> $jira_ticket/master.log
+done
+echo ================================================== >> $jira_ticket/master.log
 
-# Compress the directory
-tarball_path="$PWD/$jira_ticket.tar.gz"
-tar -czvf "$jira_ticket.tar.gz" "$jira_ticket"
 
-# Clean up the directory
-cleanup
+# Compress logs
+tarball_path="$PWD/${jira_ticket}_${timestamp}.tar.gz"
+tar -czvf "$tarball_path" "$jira_ticket" &> /dev/null
+rm -rf "$jira_ticket"
+chmod a+rw "$tarball_path"
 
-# Set permissions on the tarball to make it accessible to all users
-chmod a+rw "$jira_ticket.tar.gz"
-
-echo "Logs have been saved to a tarball at $tarball_path"
-echo "Please attach this tarball of log files to the Jira Ticket $jira_ticket and notify the CoreWeave support team."
+# Completion message
+echo "Logs saved to: $tarball_path"
+echo "Attach this tarball to Jira Ticket and notify the CoreWeave support team."
