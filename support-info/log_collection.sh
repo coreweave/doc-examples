@@ -124,7 +124,7 @@ echo ================================================== >> $jira_ticket/master.l
 
 
 # Compress logs
-tarball_path="$PWD/${jira_ticket}_${timestamp}.tar.gz"
+tarball_path="$PWD/${jira_ticket}.tar.gz"
 tar -czvf "$tarball_path" "$jira_ticket" &> /dev/null
 rm -rf "$jira_ticket"
 chmod a+rw "$tarball_path"
