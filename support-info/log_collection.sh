@@ -24,7 +24,7 @@ echo "*   This tool gathers necessary logs for support.     *"
 echo "*   Logs will be compressed - please attach to your   *"
 echo "*   Jira ticket.                                      *"
 echo "*                                                     *"
-echo "*   Log Collection Tool v1.5                          *"
+echo "*   Log Collection Tool v1.6                          *"
 echo "*   Build Date: 3 February 2025                       *"
 echo "*******************************************************"
 
