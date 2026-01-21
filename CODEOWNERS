@@ -1,0 +1,7 @@
+# Code owners for this repository
+
+# Default owner for all files
+* @coreweave/docs
+
+# support-info directory
+/support-info/ @anguyencoreweave
