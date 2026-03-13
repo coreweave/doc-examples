@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-model
+  namespace: llm-d-rhaii
+spec:
+  template:
+    spec:
+      containers:
+        - name: downloader
+          image: python:3.11-slim
+          command:
+            - /bin/sh
+            - -c
+            - |
+              pip install -q huggingface_hub
+              python -c "
+              from huggingface_hub import snapshot_download
+              snapshot_download(
+                repo_id='openai/gpt-oss-120b',
+                local_dir='/mnt/models/gpt-oss-120b',
+                ignore_patterns=['original/*', 'metal/*'],
+              )
+              "
+          volumeMounts:
+            - name: model-volume
+              mountPath: /mnt/models
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "2"
+            limits:
+              memory: "8Gi"
+              cpu: "4"
+      restartPolicy: Never
+      volumes:
+        - name: model-volume
+          persistentVolumeClaim:
+            claimName: gpt-oss-pvc
+  backoffLimit: 2
