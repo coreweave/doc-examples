@@ -91,6 +91,8 @@ spec:
               value: "meta-llama/Llama-3.1-8B-Instruct"
             - name: MODEL_ENDPOINT
               value: "http://llama-3-1-8b-svc:11434/v1/completions"
+            - name: ENABLE_TOOLs
+              value: "false"
           volumeMounts:
             - name: open-webui-storage
               mountPath: /app/backend/data
