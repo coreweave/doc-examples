@@ -102,10 +102,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: open-webui-svc
-  annotations:
-    service.beta.kubernetes.io/coreweave-load-balancer-type: public
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: open-webui
   ports:
