@@ -77,7 +77,7 @@ spec:
     spec:
       containers:
         - name: open-webui
-          image: ghcr.io/open-webui/open-webui:main
+          image: ghcr.io/open-webui/open-webui:v0.8.10
           ports:
             - containerPort: 8080
           env:
@@ -85,14 +85,8 @@ spec:
               value: "false"
             - name: OPENAI_API_BASE_URL
               value: "http://llama-3-1-8b-svc:11434/v1"
-            - name: PROVIDER
-              value: "vllm"
-            - name: MODEL_NAME
-              value: "meta-llama/Llama-3.1-8B-Instruct"
-            - name: MODEL_ENDPOINT
-              value: "http://llama-3-1-8b-svc:11434/v1/completions"
-            - name: ENABLE_TOOLs
-              value: "false"
+            - name: OPENAI_API_KEY
+              value: "not-needed"
           volumeMounts:
             - name: open-webui-storage
               mountPath: /app/backend/data
