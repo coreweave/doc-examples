@@ -1,0 +1,71 @@
+{
+  "hello-world-for-nims-on-cks/1-prerequisites": {
+    "title": "Prerequisites",
+    "intro": "Before deploying a NVIDIA NIM on CKS, verify that you have kubectl access to a CKS cluster with GPU nodes and that your NGC credentials are configured.",
+    "sections": [
+      {
+        "heading": "Connect to your CKS cluster",
+        "prose": "Ensure you can reach the cluster and that `kubectl` is properly configured. The following command lists cluster nodes and their status.",
+        "snippet": "verify-kubectl"
+      },
+      {
+        "heading": "Verify GPU node availability",
+        "prose": "NIM containers require GPU resources. Confirm that your cluster has nodes with NVIDIA GPUs available.",
+        "snippet": "verify-gpu-nodes"
+      },
+      {
+        "heading": "Create an NGC image-pull secret",
+        "prose": "NIM container images are hosted on NVIDIA NGC (nvcr.io). Create a Kubernetes `docker-registry` secret so the cluster can pull the image. Replace the `--docker-password` value with your own NGC API key.",
+        "snippet": "create-ngc-secret"
+      }
+    ]
+  },
+  "hello-world-for-nims-on-cks/2-deploy-nim": {
+    "title": "Deploy the NIM",
+    "intro": "Deploy a NVIDIA NIM as a Kubernetes Deployment backed by a ClusterIP Service. The NIM container downloads the model on first start and exposes an OpenAI-compatible API on port 8000.",
+    "sections": [
+      {
+        "heading": "Create the NGC API key secret",
+        "prose": "The NIM runtime reads the NGC API key from an environment variable sourced from a Kubernetes secret. This is separate from the image-pull secret created earlier.",
+        "snippet": "create-ngc-api-secret"
+      },
+      {
+        "heading": "Apply the NIM manifest",
+        "prose": "The manifest below creates a single-replica Deployment with one GPU, health probes, and a ClusterIP Service. The `imagePullSecrets` field references the NGC credentials created in the previous step.\n\nKey resource settings:\n- `nvidia.com/gpu: 1` — requests one GPU from the CKS scheduler\n- Readiness and liveness probes hit the NIM's built-in `/v1/health/ready` and `/v1/health/live` endpoints\n- The Service exposes port 8000 for in-cluster access\n- An `emptyDir` volume is mounted at `/opt/nim/.cache` for model weight caching",
+        "snippet": "deploy-nim"
+      },
+      {
+        "heading": "Wait for the NIM to become ready",
+        "prose": "On first start the NIM container downloads the model weights, which may take several minutes depending on model size. The readiness probe will report `True` once the model is loaded and the inference server is accepting requests.",
+        "snippet": "wait-for-nim"
+      }
+    ]
+  },
+  "hello-world-for-nims-on-cks/3-query-nim": {
+    "title": "Query the NIM",
+    "intro": "Once the NIM is ready, you can send inference requests using the OpenAI-compatible `/v1/chat/completions` endpoint. This works from any pod in the cluster via the Service DNS name.",
+    "sections": [
+      {
+        "heading": "Send a chat completion request",
+        "prose": "Use `curl` to send a JSON payload to the NIM. The request format is identical to the OpenAI Chat Completions API, making it easy to swap in any NIM model.",
+        "snippet": "query-nim"
+      },
+      {
+        "heading": "Query via in-cluster Service DNS",
+        "prose": "From any pod in the same cluster, you can reach the NIM using its Kubernetes Service DNS name: `<service-name>.<namespace>.svc.cluster.local:8000`. This is the recommended pattern for production workloads.",
+        "snippet": "query-via-service"
+      }
+    ]
+  },
+  "hello-world-for-nims-on-cks/4-cleanup": {
+    "title": "Clean up",
+    "intro": "Remove the NIM deployment, service, and secrets to free GPU resources. Always clean up when you are done experimenting — GPU nodes are a shared resource.",
+    "sections": [
+      {
+        "heading": "Delete all resources",
+        "prose": "The following commands remove the Deployment, Service, and both secrets created during this tutorial.",
+        "snippet": "cleanup"
+      }
+    ]
+  }
+}
