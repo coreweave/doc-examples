@@ -65,7 +65,7 @@ def prerequisites():
     )
     NGC_API_KEY = os.environ["NGC_API_KEY"]
     KUBECONFIG_PATH = os.path.expanduser(
-        os.environ.get("KUBECONFIG_PATH", "~/CWKubeconfig_uc-test-cluster")
+        os.environ.get("KUBECONFIG_PATH", "~/CWKubeconfig_docs-work")
     )
 
     NAMESPACE = os.environ.get("CKS_NAMESPACE", "default")
@@ -169,12 +169,15 @@ def create_ngc_secret(login, NGC_API_KEY, NAMESPACE):
     assert result.exit_code == 0, f"Secret creation failed: {result.stderr}"
     mo.md("NGC credentials secret created")
 
+    ngc_creds_ready = True
+    return (ngc_creds_ready,)
+
 
 # --------------------------------------------------------------------------- #
 # Create NGC API key secret (for NIM runtime)
 # --------------------------------------------------------------------------- #
 @app.cell
-def create_ngc_api_secret(login, NGC_API_KEY, NAMESPACE):
+def create_ngc_api_secret(login, NGC_API_KEY, NAMESPACE, ngc_creds_ready):
     # @tested-docs: snippet create-ngc-api-secret
     # @tested-docs: doc-page hello-world-for-nims-on-cks/2-deploy-nim
     login.run(
@@ -189,12 +192,15 @@ def create_ngc_api_secret(login, NGC_API_KEY, NAMESPACE):
     assert result.exit_code == 0, f"API key secret creation failed: {result.stderr}"
     mo.md("NGC API key secret created")
 
+    ngc_api_ready = True
+    return (ngc_api_ready,)
+
 
 # --------------------------------------------------------------------------- #
 # Deploy the NIM
 # --------------------------------------------------------------------------- #
 @app.cell
-def deploy_nim(login, NAMESPACE, NIM_NAME, NIM_IMAGE, textwrap):
+def deploy_nim(login, NAMESPACE, NIM_NAME, NIM_IMAGE, textwrap, ngc_api_ready):
     # @tested-docs: snippet deploy-nim
     # @tested-docs: doc-page hello-world-for-nims-on-cks/2-deploy-nim
     nim_yaml = textwrap.dedent(f"""\
@@ -215,6 +221,8 @@ def deploy_nim(login, NAMESPACE, NIM_NAME, NIM_IMAGE, textwrap):
           labels:
             app: {NIM_NAME}
         spec:
+          nodeSelector:
+            gpu.nvidia.com/class: L40
           imagePullSecrets:
             - name: ngc-credentials
           containers:
@@ -251,7 +259,7 @@ def deploy_nim(login, NAMESPACE, NIM_NAME, NIM_IMAGE, textwrap):
                 httpGet:
                   path: /v1/health/live
                   port: 8000
-                initialDelaySeconds: 30
+                initialDelaySeconds: 300
                 periodSeconds: 15
           volumes:
             - name: nim-cache
@@ -278,12 +286,15 @@ def deploy_nim(login, NAMESPACE, NIM_NAME, NIM_IMAGE, textwrap):
     assert result.exit_code == 0, f"kubectl apply failed: {result.stderr}"
     mo.md(f"NIM deployment and service created: **{NIM_NAME}**")
 
+    nim_deployed = True
+    return (nim_deployed,)
+
 
 # --------------------------------------------------------------------------- #
 # Wait for NIM to become ready
 # --------------------------------------------------------------------------- #
 @app.cell
-def wait_for_nim(login, NAMESPACE, NIM_NAME, time):
+def wait_for_nim(login, NAMESPACE, NIM_NAME, time, nim_deployed):
     # @tested-docs: snippet wait-for-nim
     # @tested-docs: doc-page hello-world-for-nims-on-cks/2-deploy-nim
     mo.md(f"Waiting for **{NIM_NAME}** pod to become ready (up to 10 minutes)...")
@@ -315,12 +326,15 @@ def wait_for_nim(login, NAMESPACE, NIM_NAME, time):
             f"NIM pod did not become ready within 10 minutes"
         )
 
+    nim_ready = True
+    return (nim_ready,)
+
 
 # --------------------------------------------------------------------------- #
 # Query the NIM — chat completions
 # --------------------------------------------------------------------------- #
 @app.cell
-def query_nim(login, NAMESPACE, NIM_NAME, NIM_MODEL, json):
+def query_nim(login, NAMESPACE, NIM_NAME, NIM_MODEL, json, nim_ready):
     # @tested-docs: snippet query-nim
     # @tested-docs: doc-page hello-world-for-nims-on-cks/3-query-nim
     payload = json.dumps({
@@ -331,15 +345,28 @@ def query_nim(login, NAMESPACE, NIM_NAME, NIM_MODEL, json):
         "max_tokens": 128,
     })
 
+    # Query via a temporary curl pod in the cluster
     result = login.run(
-        f"kubectl exec -n {NAMESPACE} deploy/{NIM_NAME} -- "
-        f"curl -s http://localhost:8000/v1/chat/completions "
+        f"kubectl run curl-test --rm -i --restart=Never "
+        f"--image=curlimages/curl -- "
+        f"curl -s http://{NIM_NAME}.{NAMESPACE}.svc.cluster.local:8000/v1/chat/completions "
         f"-H 'Content-Type: application/json' "
         f"-d '{payload}'"
     )
     assert result.exit_code == 0, f"NIM query failed: {result.stderr}"
 
-    response = json.loads(result.stdout)
+    # Extract JSON from stdout — kubectl appends "pod deleted" text after the response
+    raw = result.stdout.strip()
+    # Find the JSON object boundaries
+    start = raw.index('{')
+    depth = 0
+    for i, ch in enumerate(raw[start:], start):
+        if ch == '{': depth += 1
+        elif ch == '}': depth -= 1
+        if depth == 0:
+            json_str = raw[start:i+1]
+            break
+    response = json.loads(json_str)
     assert "choices" in response, f"Unexpected response: {result.stdout[:200]}"
 
     answer = response["choices"][0]["message"]["content"]
@@ -355,7 +382,7 @@ def query_nim(login, NAMESPACE, NIM_NAME, NIM_MODEL, json):
 # Verify via port-forward + external curl (alternative access pattern)
 # --------------------------------------------------------------------------- #
 @app.cell
-def query_via_service(login, NAMESPACE, NIM_NAME, NIM_MODEL, json):
+def query_via_service(login, NAMESPACE, NIM_NAME, NIM_MODEL, json, response):
     # @tested-docs: snippet query-via-service
     # @tested-docs: doc-page hello-world-for-nims-on-cks/3-query-nim
     payload = json.dumps({
@@ -366,23 +393,39 @@ def query_via_service(login, NAMESPACE, NIM_NAME, NIM_MODEL, json):
         "max_tokens": 32,
     })
 
+    # Second query via temporary pod to confirm service DNS works
     result = login.run(
+        f"kubectl run curl-test-2 --rm -i --restart=Never "
+        f"--image=curlimages/curl -- "
         f"curl -s http://{NIM_NAME}.{NAMESPACE}.svc.cluster.local:8000/v1/chat/completions "
         f"-H 'Content-Type: application/json' "
         f"-d '{payload}'"
     )
     assert result.exit_code == 0, f"Service query failed: {result.stderr}"
 
-    response = json.loads(result.stdout)
-    assert "choices" in response, f"Unexpected response: {result.stdout[:200]}"
-    mo.md(f"**Service DNS query works:** {response['choices'][0]['message']['content']}")
+    # Extract JSON — kubectl appends pod lifecycle text
+    raw = result.stdout.strip()
+    start = raw.index('{')
+    depth = 0
+    for i, ch in enumerate(raw[start:], start):
+        if ch == '{': depth += 1
+        elif ch == '}': depth -= 1
+        if depth == 0:
+            json_str = raw[start:i+1]
+            break
+    svc_response = json.loads(json_str)
+    assert "choices" in svc_response, f"Unexpected response: {result.stdout[:200]}"
+    mo.md(f"**Service DNS query works:** {svc_response['choices'][0]['message']['content']}")
+
+    queries_done = True
+    return (queries_done,)
 
 
 # --------------------------------------------------------------------------- #
 # Cleanup
 # --------------------------------------------------------------------------- #
 @app.cell
-def cleanup(login, NAMESPACE, NIM_NAME):
+def cleanup(login, NAMESPACE, NIM_NAME, queries_done):
     # @tested-docs: snippet cleanup
     # @tested-docs: doc-page hello-world-for-nims-on-cks/4-cleanup
     result = login.run(f"kubectl delete -f /tmp/{NIM_NAME}.yaml --ignore-not-found")
