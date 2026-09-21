@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gpu-preflight
+  labels:
+    app.kubernetes.io/name: gpu-preflight
+    app.kubernetes.io/part-of: coreweave-doc-examples
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gpu-preflight
+    spec:
+      restartPolicy: Never
+      # Optional: add node selectors, tolerations, or affinity rules that match
+      # your organization's GPU scheduling policy.
+      containers:
+        - name: gpu-preflight
+          image: nvidia/cuda:12.4.1-base-ubuntu22.04
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -lc
+            - |
+              set -euo pipefail
+              echo "== GPU preflight =="
+              echo "Hostname: $(hostname)"
+              echo "Date: $(date -Iseconds)"
+              echo ""
+              echo "== NVIDIA device files =="
+              ls -l /dev/nvidia* || true
+              echo ""
+              echo "== nvidia-smi =="
+              nvidia-smi
+              echo ""
+              echo "== CUDA version files =="
+              cat /usr/local/cuda/version.json 2>/dev/null || true
+              echo ""
+              echo "== Optional workspace mount =="
+              df -h /workspace || true
+              echo "GPU preflight completed successfully."
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8Gi
+              nvidia.com/gpu: "1"
+            limits:
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: gpu-preflight-workspace
