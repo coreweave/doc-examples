@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
+# Supply the token through COREWEAVE_API_TOKEN or TF_VAR_coreweave_api_token.
+# Keep credentials out of this file.
+# Each zone groups existing source buckets with a destination in that same zone.
+# Keep one entry for a single-zone deployment; add entries for additional zones.
+inventory_by_zone = {
+  "US-EAST-04A" = {
+    source_buckets     = ["your-east-source-bucket"]
+    destination_bucket = "your-east-inventory-report-bucket"
+    # Existing destinations: opt in only after reviewing existing lifecycle rules.
+    # manage_report_retention = true
+  }
+  "US-WEST-09A" = {
+    source_buckets            = ["your-west-source-bucket"]
+    destination_bucket        = "your-new-west-inventory-report-bucket"
+    create_destination_bucket = true
+  }
+}
+
+# Report settings apply to every zone.
+inventory_name = "daily-inventory"
+report_format  = "CSV"
+enabled        = true
+
+# New destinations expire inventory/ objects after this many days by default.
+report_retention_days = 7

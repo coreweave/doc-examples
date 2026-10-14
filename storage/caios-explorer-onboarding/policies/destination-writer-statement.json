@@ -1,0 +1,9 @@
+{
+  "Sid": "AllowCatalogInventoryWriter",
+  "Effect": "Allow",
+  "Principal": {
+    "CW": "arn:aws:iam::static:role/static/inventory"
+  },
+  "Action": ["s3:PutObject", "s3:AbortMultipartUpload"],
+  "Resource": ["arn:aws:s3:::<DESTINATION_BUCKET>/inventory/*"]
+}

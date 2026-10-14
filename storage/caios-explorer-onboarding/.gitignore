@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.auto.tfvars
+crash.log
+crash.*.log
+
+*.tfvars.json
+__pycache__/
+
+.venv/
+
+.env
+.env.*
+!.env.example
