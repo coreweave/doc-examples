@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
+boto3>=1.36,<2

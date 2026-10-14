@@ -1,0 +1,20 @@
+[
+  {
+    "Sid": "AllowCatalogInventoryList",
+    "Effect": "Allow",
+    "Principal": {
+      "CW": "arn:aws:iam::<READER_ORG_ID>:coreweave/<REPORT_READER_PRINCIPAL_ID>"
+    },
+    "Action": ["s3:ListBucket"],
+    "Resource": ["arn:aws:s3:::<DESTINATION_BUCKET>"]
+  },
+  {
+    "Sid": "AllowCatalogInventoryRead",
+    "Effect": "Allow",
+    "Principal": {
+      "CW": "arn:aws:iam::<READER_ORG_ID>:coreweave/<REPORT_READER_PRINCIPAL_ID>"
+    },
+    "Action": ["s3:GetObject"],
+    "Resource": ["arn:aws:s3:::<DESTINATION_BUCKET>/inventory/*"]
+  }
+]
