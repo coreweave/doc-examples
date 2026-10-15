@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
 """End-to-end test of delete_cold_objects.py against a mock S3 (moto).
 
 Drives the assembled script through identify -> quarantine -> delete -> recover

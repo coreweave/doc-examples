@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+SPDX-License-Identifier: MIT
+-->
+
 # Contributing
 
 Contributions to CoreWeave documentation examples are welcome, including fixes,

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+SPDX-License-Identifier: MIT
+-->
+
 # RMA Request Process
 
 As part of our support process, the following information is required when opening an RMA request with CoreWeave support. Please provide the following information in the Jira support ticket to help expedite your RMA request:

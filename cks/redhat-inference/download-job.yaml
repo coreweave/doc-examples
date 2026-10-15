@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
 apiVersion: batch/v1
 kind: Job
 metadata:
