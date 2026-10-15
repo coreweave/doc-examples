@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+SPDX-License-Identifier: MIT
+-->
+
 # Documentation examples
 
 Support files for [docs.coreweave.com](https://docs.coreweave.com)

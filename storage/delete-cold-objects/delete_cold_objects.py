@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
 """Delete cold objects from CoreWeave AI Object Storage.
 
 A safe, staged workflow for identifying and deleting cold objects when the

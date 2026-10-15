@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+SPDX-License-Identifier: MIT
+-->
+
 # Delete cold objects
 
 Supporting script for [Delete cold objects](https://docs.coreweave.com/products/storage/object-storage/using-object-storage/delete-cold-objects)

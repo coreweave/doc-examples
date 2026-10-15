@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
 apiVersion: serving.kserve.io/v1alpha1
 kind: LLMInferenceService
 metadata:

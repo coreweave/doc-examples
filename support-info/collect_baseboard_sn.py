@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+# SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
+# SPDX-License-Identifier: MIT
+
 
 import subprocess 
 import time
