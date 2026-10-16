@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gpu-preflight-workspace
+  labels:
+    app.kubernetes.io/name: gpu-preflight
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # Uncomment and set this if your cluster requires an explicit storage class.
+  # storageClassName: block-nvme
+  resources:
+    requests:
+      storage: 20Gi
