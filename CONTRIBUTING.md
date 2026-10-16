@@ -5,8 +5,9 @@ SPDX-License-Identifier: MIT
 
 # Contributing
 
-Contributions to CoreWeave documentation examples are welcome, including fixes,
-new examples, and improvements to supporting documentation.
+This repository contains examples and supporting materials for CoreWeave
+documentation. Public feedback, bug reports, and suggestions are welcome through
+GitHub issues. Pull requests are currently limited to repository collaborators.
 
 ## Report an issue or propose a change
 
@@ -45,7 +46,8 @@ commit signature. Read the CLA before submitting a contribution.
 
 ## Submit a pull request
 
-1. Fork this repository and create a branch for your change.
+1. If you are a repository collaborator, create a branch for your change.
+   Otherwise, open an issue describing your proposed change.
 2. Keep the change focused and follow the conventions of the example you are
    updating. Update its supporting documentation when behavior or usage changes.
 3. Run the relevant tests or validate the example in an appropriate environment.
@@ -69,5 +71,16 @@ submitted commit has the contributor's `Signed-off-by` trailer. If any sign-off
 is missing, request it from the contributor and wait for the corrected commits
 before merging. Do not add a sign-off on someone else's behalf.
 
-Contributions accepted into this repository are distributed under its
-[MIT license](./LICENSE), subject to the [CoreWeave CLA](./CLA.md).
+## Licensing and third-party materials
+
+CoreWeave's original contributions are licensed under the [MIT License](./LICENSE).
+This repository may include or reference third-party software, models, images, or
+other materials, which remain subject to their respective license terms. Nothing
+in this repository changes those terms or grants rights beyond those CoreWeave is
+authorized to grant.
+
+Contributions must be submitted under terms that permit their inclusion and
+distribution in this repository and are subject to the
+[CoreWeave CLA](./CLA.md). If your contribution includes third-party material,
+identify its source and applicable license and preserve any required copyright
+notices and attribution.
