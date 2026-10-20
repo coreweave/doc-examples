@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 CoreWeave, Inc.
 SPDX-License-Identifier: MIT
 -->
 
-# Enable the CAIOS Explorer for a bucket
+# Enable CAIOS Explorer for a bucket
 
 Enable inventory reporting on your CoreWeave AI Object Storage (CAIOS) bucket to make its metadata available in CAIOS Explorer. Your inventory reports continue to arrive in the destination you choose, using your configured report settings. During the private preview, your organization must be on the CAIOS Explorer allowlist.
 
@@ -17,20 +17,20 @@ Before you begin, confirm the following:
 
 - Your organization is on the private-preview allowlist. Contact CoreWeave Support to request access. Organizations outside the allowlist continue to receive inventory reports, but CAIOS Explorer shows no data.
 - Your user has the `Object Storage Catalog Viewer` role to view catalog data.
-- You have an existing CAIOS source bucket.
-- You have an existing destination bucket, or a globally unique name and CAIOS Availability Zone for a new report bucket.
+- You have an existing AI Object Storage source bucket.
+- You have an existing destination bucket, or a globally unique name and Availability Zone for a new report bucket.
 - You have permission to manage inventory configurations on the source bucket and configure access to the destination. Creating a destination also requires permission to list and create buckets and manage their policies.
 - To use the sample, you have Terraform 1.5 or later and a CoreWeave API token.
 
-The source and destination buckets must be in the same CAIOS Availability Zone. Group source buckets by zone in `inventory_by_zone`, with one destination per zone. The map records your intended grouping; confirm the actual bucket locations before applying Terraform.
+The source and destination buckets must be in the same Availability Zone. Group source buckets by zone in `inventory_by_zone`, with one destination per zone. The map records your intended grouping, so confirm the actual bucket locations before applying Terraform.
 
 ## Prepare report permissions
 
-Grant your Terraform identity `s3:GetInventoryConfiguration` and `s3:PutInventoryConfiguration` on the source bucket. Grant the CoreWeave inventory service `s3:PutObject` and `s3:AbortMultipartUpload` on the destination report prefix. Give report readers permission to list the destination and read reports. Follow the [bucket policy setup](https://docs.coreweave.com/products/storage/object-storage/buckets/inventory-reporting/configure#set-bucket-access-policies).
+Grant your Terraform identity `s3:GetInventoryConfiguration` and `s3:PutInventoryConfiguration` on the source bucket. Grant the CoreWeave inventory service account `s3:PutObject` and `s3:AbortMultipartUpload` on the destination report prefix. Give report readers permission to list the destination and read reports. Follow the [bucket policy setup](https://docs.coreweave.com/products/storage/object-storage/buckets/inventory-reporting/configure#set-bucket-access-policies).
 
 For an existing destination, the sample includes [permission statements](policies/) for bucket administrators. Replace the placeholders and merge them into your existing policies, preserving other required grants. Apply the destination permissions before enabling inventory reporting.
 
-When creating a destination with the sample, Terraform grants the inventory service report-write access and the authenticated Terraform caller access to manage the bucket and reports. Add grants to the managed policy for any additional report readers. Source bucket permissions remain a prerequisite.
+When you create a destination with the sample, Terraform grants the inventory service account report-write access and the authenticated Terraform caller access to manage the bucket and reports. Add grants to the managed policy for any additional report readers. Source bucket permissions remain a prerequisite.
 
 ## Configure Terraform
 
@@ -50,7 +50,7 @@ Create your manual variable file from the example:
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `terraform.tfvars` with one entry per CAIOS Availability Zone. For a single zone with an existing destination:
+Edit `terraform.tfvars` with one entry per Availability Zone. For a single zone with an existing destination:
 
 ```hcl
 inventory_by_zone = {
@@ -83,7 +83,7 @@ inventory_by_zone = {
 }
 ```
 
-Each source bucket belongs to one zone entry, and each zone uses a different destination. The root calls `modules/inventory` once per zone. Use one root configuration per organization and credential set; separate deployments can reuse the same module.
+Each source bucket belongs to one zone entry, and each zone uses a different destination. The root calls `modules/inventory` once per zone. Use one root configuration per organization and credential set. Separate deployments can reuse the same module.
 
 ### Option 2: Discover buckets with Boto3
 
@@ -95,43 +95,43 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-The helper uses Boto3 with your shared AWS profile or its default credential chain. Your identity needs `s3:ListAllMyBuckets` to list buckets and `s3:ListBucket` on selected buckets for `HeadBucket`. Boto3 reads the zone through `HeadBucket` with hostname-based addressing; your AWS configuration stays unchanged. See the [Boto3 configuration reference](https://docs.aws.amazon.com/boto3/latest/guide/configuration.html).
+The helper uses Boto3 with your shared AWS profile or its default credential chain. Your identity needs `s3:ListAllMyBuckets` to list buckets and `s3:ListBucket` on selected buckets for `HeadBucket`. Boto3 reads the zone through `HeadBucket` with hostname-based addressing and leaves your AWS configuration unchanged. See the [Boto3 configuration reference](https://docs.aws.amazon.com/boto3/latest/guide/configuration.html).
 
-Replace `<aws-profile>` with your configured AWS profile name and `<org-id>` with your CoreWeave organization ID.
+Replace `[AWS-PROFILE]` with your configured AWS profile name and `[ORG-ID]` with your CoreWeave organization ID.
 
 Discover one zone:
 
 ```sh
 python scripts/discover_inventory.py \
-  --profile "<aws-profile>" \
+  --profile "[AWS-PROFILE]" \
   --zone US-EAST-02A \
-  --destination-prefix "<org-id>-inventory" \
+  --destination-prefix "[ORG-ID]-inventory" \
   --output inventory.tfvars.json
 ```
 
-Repeat `--zone` to discover multiple zones:
+To discover multiple zones, repeat `--zone`:
 
 ```sh
 python scripts/discover_inventory.py \
-  --profile "<aws-profile>" \
+  --profile "[AWS-PROFILE]" \
   --zone US-EAST-02A --zone US-WEST-09A \
-  --destination-prefix "<org-id>-inventory" \
+  --destination-prefix "[ORG-ID]-inventory" \
   --output inventory.tfvars.json
 ```
 
 Omit `--zone` to include every discovered zone. Zone matching ignores letter case. Discovery lists all buckets and checks locations before applying the zone filter. Narrow source names before those lookups with repeatable, quoted patterns such as `--include 'training-*'` or `--exclude '*-backups'`.
 
-The helper uses the S3 endpoint from your profile or environment. Add `--endpoint-url https://cwobject.com` to override it. Discovery performs read-only requests and writes local variables; it creates no buckets or inventory configurations.
+The helper uses the S3 endpoint from your profile or environment. To override it, add `--endpoint-url https://cwobject.com`. Discovery performs read-only requests and writes local variables. It creates no buckets or inventory configurations.
 
-Destination names follow `<destination-prefix>-<zone>`, such as `<org-id>-inventory-us-east-02a`. A matching existing destination is excluded from the source list and reused after its zone is verified. Otherwise, the generated entry sets `create_destination_bucket = true`. Choose a prefix unique to your organization. Edit the output to reuse differently named destinations, setting their creation flags to `false` and confirming their zones.
+Destination names follow `[DESTINATION-PREFIX]-[ZONE]`, such as `[ORG-ID]-inventory-us-east-02a`. The helper excludes a matching existing destination from the source list and reuses it after verifying its zone. Otherwise, the generated entry sets `create_destination_bucket = true`. Choose a prefix unique to your organization. Edit the output to reuse differently named destinations, setting their creation flags to `false` and confirming their zones.
 
-Failed lookups and unsupported zone formats are skipped and reported on stderr. An unverifiable destination also excludes its zone's sources. The helper reports requested zones without usable sources. Successful buckets produce a map and a zero exit status; no usable sources or a bucket-listing failure produces an error and no output file. An existing output file is preserved.
+The helper skips failed lookups and unsupported zone formats and reports them on `stderr`. An unverifiable destination also excludes its zone's sources, and the helper reports requested zones without usable sources. Successful buckets produce a map and a zero exit status. If no sources are usable or bucket listing fails, the helper returns an error and writes no output file. The helper never overwrites an existing output file.
 
-Review the generated `inventory.tfvars.json`, destination creation flags, and skipped-bucket summary before planning. Exclude unrelated report buckets or other buckets you want to leave out. New destinations receive the default seven-day retention. Keep shared report settings in `terraform.tfvars` if needed, with the zone map defined only in the generated JSON file.
+Review the generated `inventory.tfvars.json`, destination creation flags, and skipped-bucket summary before planning. Exclude unrelated report buckets or other buckets you want to leave out. New destinations receive the default seven-day retention. If needed, keep shared report settings in `terraform.tfvars`, with the zone map defined only in the generated JSON file.
 
 ### Shared report settings
 
-The sample creates daily reports under `inventory/`. Choose `report_format`, `frequency`, `included_object_versions`, and `optional_fields` for the reports you want to receive. These settings, `inventory_name`, and `enabled` apply to every zone. Keep `enabled = true` to enable inventory reporting. Catalog access also requires the private-preview prerequisites above.
+The sample creates daily reports under `inventory/`. Choose `report_format`, `frequency`, `included_object_versions`, and `optional_fields` for the reports you want to receive. These settings, `inventory_name`, and `enabled` apply to every zone. Keep `enabled = true` to enable inventory reporting. Catalog access also requires the private-preview requirements in [Prerequisites](#prerequisites).
 
 ## Authenticate Terraform
 
@@ -143,13 +143,13 @@ The root also accepts the sensitive `coreweave_api_token` input, wired to `provi
 export TF_VAR_coreweave_api_token="$COREWEAVE_API_TOKEN"
 ```
 
-`COREWEAVE_API_TOKEN` takes precedence when both are set. Keep tokens out of `.tf` and `.tfvars` files; use your CI secret store for automated runs.
+`COREWEAVE_API_TOKEN` takes precedence when both are set. Keep tokens out of `.tf` and `.tfvars` files. Use your CI secret store for automated runs.
 
 Boto3 discovery uses S3 credentials from its AWS profile or default credential chain. Configure that profile and the Terraform token for the same organization.
 
 ## Retain inventory reports for seven days
 
-New destination buckets receive a lifecycle rule that expires objects under `inventory/` after seven days. Reserve that prefix for disposable reports: the rule applies to every object beneath it, including reports already present. Bucket deletion protection (`prevent_destroy`) allows lifecycle expiration of individual objects.
+New destination buckets receive a lifecycle rule that expires objects under `inventory/` after seven days. Reserve that prefix for disposable reports: the rule applies to every object beneath it, including reports already present. Terraform deletion protection (`prevent_destroy`) allows lifecycle expiration of individual objects.
 
 Set the shared retention period in `terraform.tfvars`:
 
@@ -157,7 +157,7 @@ Set the shared retention period in `terraform.tfvars`:
 report_retention_days = 7
 ```
 
-Set `manage_report_retention = false` inside a zone entry to keep its lifecycle configuration unmanaged. Existing destinations default to unmanaged retention so their current rules remain in place. To enable retention on an existing destination, set `manage_report_retention = true` in its zone entry and grant the Terraform identity `s3:GetLifecycleConfiguration` and `s3:PutLifecycleConfiguration` on that bucket.
+To keep a zone's lifecycle configuration unmanaged, set `manage_report_retention = false` inside its zone entry. Existing destinations default to unmanaged retention so their current rules remain in place. To enable retention on an existing destination, set `manage_report_retention = true` in its zone entry and grant the Terraform identity `s3:GetLifecycleConfiguration` and `s3:PutLifecycleConfiguration` on that bucket.
 
 Terraform manages the destination's complete lifecycle configuration. If the bucket has existing rules, keep lifecycle management in its current project and add an `inventory/` expiration rule there. To transfer management to this module, preserve every required rule in `modules/inventory/main.tf` and import the existing configuration before applying:
 
@@ -167,9 +167,9 @@ terraform import \
   'your-inventory-report-bucket'
 ```
 
-The sample configures current-object expiration. Versioned destinations need additional noncurrent-version expiration rules to reclaim older versions; manage those rules with the destination's lifecycle configuration. See the [lifecycle resource reference](https://registry.terraform.io/providers/coreweave/coreweave/latest/docs/resources/object_storage_bucket_lifecycle_configuration).
+The sample configures current-object expiration. Versioned destinations need additional noncurrent-version expiration rules to reclaim older versions. Manage those rules with the destination's lifecycle configuration. See the [lifecycle resource reference](https://registry.terraform.io/providers/coreweave/coreweave/latest/docs/resources/object_storage_bucket_lifecycle_configuration).
 
-Choose a longer retention period if you need older reports for analysis. The rule sets an expiration age; lifecycle processing determines when eligible objects are removed. Setting `enabled = false` pauses report generation while lifecycle expiration continues. Changing managed retention to `false` plans deletion of the lifecycle configuration, so review the plan before applying.
+If you need older reports for analysis, choose a longer retention period. The rule sets an expiration age, but lifecycle processing determines when eligible objects are removed. Setting `enabled = false` pauses report generation while lifecycle expiration continues. Changing managed retention to `false` plans deletion of the lifecycle configuration, so review the plan before applying.
 
 ## Apply the configuration
 
@@ -242,13 +242,13 @@ Open the CAIOS Explorer dashboard in the [Storage dashboards folder](https://cks
 | Terraform authentication fails | Verify your CoreWeave API token. |
 | Enabling inventory returns access denied | Check source inventory permissions and destination report-write permissions. |
 | Inventory reports are missing | Confirm enablement and the destination, then check report permissions. |
-| Inventory reports arrive but CAIOS Explorer shows no data | Confirm your organization is on the private-preview allowlist and your user has the `Object Storage Catalog Viewer` role. If data remains unavailable, contact CoreWeave Support with your organization, source bucket, zone, and time inventory was enabled. |
+| Inventory reports arrive but CAIOS Explorer shows no data | Confirm your organization is on the private-preview allowlist and your user has the `Object Storage Catalog Viewer` role. If data remains unavailable, contact CoreWeave Support with your organization, source bucket, zone, and the time inventory was enabled. |
 | CAIOS Explorer data access is denied | Verify your user has the `Object Storage Catalog Viewer` role. |
 
 Exclude tokens and Terraform state files from support requests.
 
 ## Disable inventory reporting
 
-Set `enabled = false` to pause reports across all configured zones, review the Terraform plan, and apply it to stop future inventory reports. Contact CoreWeave Support before disabling reports if you depend on continued catalog updates. Existing reports remain in your destination bucket until you remove them or a retention policy expires them.
+To stop future inventory reports across all configured zones, set `enabled = false`, review the Terraform plan, and apply it. If you depend on continued catalog updates, contact CoreWeave Support before disabling reports. Existing reports remain in your destination bucket until you remove them or a retention policy expires them.
 
-Terraform protects a destination created by this sample with `prevent_destroy`. Renaming it, changing its zone, or switching creation off can produce a blocked destruction plan. Plan a state transfer or migration before changing destination ownership. Lifecycle rules continue to expire report objects while bucket deletion protection is enabled.
+Terraform protects a destination created by this sample with `prevent_destroy`. Renaming it, changing its zone, or switching creation off can produce a blocked destruction plan. Plan a state transfer or migration before changing destination ownership. Lifecycle rules continue to expire report objects while Terraform's `prevent_destroy` protection is enabled.
