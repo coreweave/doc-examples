@@ -5,7 +5,7 @@ SPDX-License-Identifier: MIT
 
 # CAIOS Explorer onboarding
 
-Run this Terraform project to enable inventory reporting and the CAIOS catalog for existing buckets. Follow the [onboarding guide](caios-explorer-onboarding.md) for destination setup, authentication, import, and verification.
+Run this Terraform project to enable inventory reporting and the CAIOS catalog for existing buckets, which makes their metadata available in CAIOS Explorer. Follow the [onboarding guide](caios-explorer-onboarding.md) for destination setup, authentication, import, and verification.
 
 The project manages one inventory configuration per source bucket. Group source buckets and destinations in `inventory_by_zone`. Each zone uses an existing destination by default; set `create_destination_bucket = true` in its entry to create a bucket and policy. Prepare source permissions before applying it.
 
@@ -15,21 +15,25 @@ Authenticate Terraform by loading `COREWEAVE_API_TOKEN` from your secret manager
 
 Run commands from `storage/caios-explorer-onboarding`. Choose either setup path:
 
-- **Manual:** copy `terraform.tfvars.example` to `terraform.tfvars`, edit the zone entries, then run `terraform plan`.
-- **Discovery:** install Boto3 and generate a JSON variable file using your AWS profile:
+- **Manual:** Copy `terraform.tfvars.example` to `terraform.tfvars`, edit the zone entries, then run `terraform plan`.
+- **Discovery:** Use Python 3.10 or later to install Boto3 and generate a JSON variable file using your AWS profile:
 
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python scripts/discover_inventory.py --profile "<aws-profile>" \
-  --zone US-EAST-01A --zone US-EAST-03A \
-  --destination-prefix "<org-id>-inventory" --output inventory.tfvars.json
-terraform init
-terraform plan -var-file=inventory.tfvars.json -out=onboarding.tfplan
-```
+  ```sh
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -r requirements.txt
+  python scripts/discover_inventory.py --profile "<aws-profile>" \
+    --zone US-EAST-01A --zone US-EAST-03A \
+    --destination-prefix "<org-id>-inventory" --output inventory.tfvars.json
+  terraform init
+  terraform plan -var-file=inventory.tfvars.json -out=onboarding.tfplan
+  ```
 
-Replace `<aws-profile>` with your configured AWS profile name and `<org-id>` with your CoreWeave organization ID. Use Python 3.10 or later for discovery. Pass `--zone` once for one zone, repeat it for multiple zones, or omit it for all zones. Use `--include` and `--exclude` to select source names. Review generated destinations and skipped-bucket errors before applying. The [onboarding guide](caios-explorer-onboarding.md#configure-terraform) covers both paths, permissions, and endpoint configuration. Run `terraform init` before the first plan in either path.
+  Replace `<aws-profile>` with your configured AWS profile name and `<org-id>` with your CoreWeave organization ID. Pass `--zone` once for one zone, repeat it for multiple zones, or omit it for all zones. Use `--include` and `--exclude` to select source names. Review generated destinations and skipped-bucket errors before applying.
+
+Run `terraform init` before the first plan in either path. The [onboarding guide](caios-explorer-onboarding.md#configure-terraform) covers both paths, permissions, and endpoint configuration.
+
+The project contains the following assets:
 
 | Asset | Purpose |
 | --- | --- |
@@ -51,6 +55,8 @@ New destinations receive inventory-writer permissions and management/report acce
 
 New destinations use `prevent_destroy` to block bucket deletion or replacement while the resource remains configured. Switching `create_destination_bucket` off also schedules bucket deletion and is blocked. Coordinate a state transfer to retain the bucket under another project. Managed lifecycle rules expire report objects independently of bucket deletion protection.
 
+New destinations expire objects under `inventory/` after seven days by default. Set `report_retention_days` to change the age for all managed destinations. Each zone can set `manage_report_retention`: it defaults to true for new destinations and false for existing destinations. Existing lifecycle rules need review before opting in because Terraform manages the full lifecycle configuration. See [report retention](caios-explorer-onboarding.md#retain-inventory-reports-for-seven-days) for permissions, imports, and versioned destinations.
+
 Run the root and module tests with Terraform 1.7 or later. The mocked provider checks single-zone and multi-zone routing, invalid groupings, destination creation, and report permissions without creating remote resources.
 
 ```sh
@@ -59,7 +65,5 @@ terraform test
 terraform -chdir=modules/inventory init -backend=false
 terraform -chdir=modules/inventory test
 ```
-
-New destinations expire objects under `inventory/` after seven days by default. Set `report_retention_days` to change the age for all managed destinations. Each zone can set `manage_report_retention`: it defaults to true for new destinations and false for existing destinations. Existing lifecycle rules need review before opting in because Terraform manages the full lifecycle configuration. See [report retention](caios-explorer-onboarding.md#retain-inventory-reports-for-seven-days) for permissions, imports, and versioned destinations.
 
 Run discovery tests with `python3 -m unittest discover -s tests -p 'test_*.py'`. Activate the virtual environment first. The tests use Botocore stubs for SDK responses.
