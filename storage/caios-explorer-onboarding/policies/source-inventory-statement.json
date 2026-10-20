@@ -2,8 +2,8 @@
   "Sid": "AllowCatalogInventoryConfiguration",
   "Effect": "Allow",
   "Principal": {
-    "CW": "arn:aws:iam::<SOURCE_ORG_ID>:coreweave/<TERRAFORM_PRINCIPAL_ID>"
+    "CW": "arn:aws:iam::[SOURCE-ORG-ID]:coreweave/[TERRAFORM-PRINCIPAL-ID]"
   },
   "Action": ["s3:GetInventoryConfiguration", "s3:PutInventoryConfiguration"],
-  "Resource": ["arn:aws:s3:::<SOURCE_BUCKET>"]
+  "Resource": ["arn:aws:s3:::[SOURCE-BUCKET]"]
 }
